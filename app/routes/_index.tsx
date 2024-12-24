@@ -15,10 +15,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const session = url.searchParams.get("session");
 
   if (!session) {
-    return new Response(
-      JSON.stringify({ error: "Session not found" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return { message: "Please provide an email to continue." };
   }
 
   const user = await db.user.upsert({
@@ -28,10 +25,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   });
 
   if (!user) {
-    return new Response(
-      JSON.stringify({ error: "User not found" }),
-      { status: 404, headers: { "Content-Type": "application/json" } }
-    );
+    return { message: "User not found" };
   }
 
   if (user.role === "REVIEWER") {
@@ -43,18 +37,16 @@ export const loader: LoaderFunction = async ({ request }) => {
   }
 
   const rate = await db.rate.findFirst();
-  return new Response(
-    JSON.stringify({
+  return {
       user,
       imageUrl: rate?.imageUrl || "",
       transcript: rate?.transcript || "",
-    }),
-    { headers: { "Content-Type": "application/json" } }
-  );
+      message: "",
+    };
 };
 
 export default function Index() {
-  const { user, imageUrl, transcript, error } = useLoaderData<typeof loader>();
+  const { user, imageUrl, transcript, message} = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ error?: string; success?: boolean }>();
   const [rating, setRating] = useState<number | null>(null);
   const [transcription, setTranscription] = useState(transcript || "");
@@ -67,10 +59,10 @@ export default function Index() {
   }, [])
 
   useEffect(() => {
-    if (user.role === "ANNOTATOR") {
+    if (user?.role === "ANNOTATOR") {
       setTranscription(""); 
     }
-  }, [user.role]);
+  }, [user?.role]);
 
   useEffect(() => {
     if (toastVisible && fetcher.data?.success) {
@@ -103,11 +95,15 @@ export default function Index() {
   if (!isHydrated) {
     return <div>Loading...</div>;
   }
-  if (error) {
-    toast.error(error);
-    return <div className="text-red-500">{error}</div>;
-  }
 
+  if (message) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-xl text-center">{message}</p>
+      </div>
+    );
+  }
+  
   if (!user) {
     return <div>Loading user data...</div>;
   }
