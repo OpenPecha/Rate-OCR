@@ -131,7 +131,10 @@ export default function Index() {
   if (message) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-xl text-center">{message}</p>
+        <div className="bg-blue-50 p-6 sm:p-8 rounded-lg shadow-md">
+          <h2 className="text-lg sm:text-xl text-blue-800 font-semibold mb-2">Status Update</h2>
+          <p className="text-sm sm:text-base text-gray-600">{message}</p>
+        </div>
       </div>
     );
   }

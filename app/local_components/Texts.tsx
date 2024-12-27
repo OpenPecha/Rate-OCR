@@ -118,7 +118,7 @@ const Texts: React.FC = () => {
         type="button"
         onClick={handleUpload}
         disabled={!file || isLoading}
-        className="w-full sm:w-auto btn-sm rounded-md min-h-0 bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400"
+        className="btn-sm rounded-md min-h-0 bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400"
       >
         {isLoading ? <div>uploading...</div> : <>upload</>}
       </Button>

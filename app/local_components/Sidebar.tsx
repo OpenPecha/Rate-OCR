@@ -58,7 +58,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
         <div>
           <ul className="mt-4 space-y-2">
             {loading ? (
-              <li>Loading...</li>
+              <li>No submissions available</li>
             ) : submissions.length > 0 ? (
               submissions.map((submission) => (
                 <li key={submission.id}>
