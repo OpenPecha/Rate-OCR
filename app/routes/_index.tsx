@@ -6,7 +6,7 @@ import TranscriptTextArea from "~/local_components/transcripttextarea";
 import Rating from "~/local_components/Rating";
 import Buttons from "~/local_components/Buttons"; 
 import { db } from "~/services/db.server";
-import toast , { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import Sidebar from "~/local_components/Sidebar";
 import { FaBars } from "react-icons/fa";
 
@@ -36,55 +36,87 @@ export const loader: LoaderFunction = async ({ request }) => {
     return redirect(`/admin?session=${user.email}`);
   }
 
-  const rate = await db.rate.findFirst();
-  return {
+  if (user.role !== "ANNOTATOR") {
+    return { message: "Unauthorized access. Please contact the admin." };
+  }
+
+  const pendingContent = await db.rate.findFirst({
+    where: {
+      rating: null,
+      status: "PENDING",
+    },
+    orderBy: {
+      createdAt: 'asc'
+    },
+  });
+
+  if (!pendingContent) {
+    return {
       user,
-      imageUrl: rate?.imageUrl || "",
-      transcript: rate?.transcript || "",
-      message: "",
+      message: "No more content to annotate.",
     };
+  }
+
+  return {
+    user,
+    content: pendingContent,
+    message: "",
+  };
 };
 
 export default function Index() {
-  const { user, imageUrl, transcript, message} = useLoaderData<typeof loader>();
+  const { user, content, message } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<{ error?: string; success?: boolean }>();
   const [rating, setRating] = useState<number | null>(null);
-  const [transcription, setTranscription] = useState(transcript || "");
+  const [transcription, setTranscription] = useState(content?.transcript || "");
   const [toastVisible, setToastVisible] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
-  }, [])
+  }, []);
 
   useEffect(() => {
-    if (user?.role === "ANNOTATOR") {
-      setTranscription(""); 
+    if (content?.transcript) {
+      setTranscription(content.transcript);
     }
-  }, [user?.role]);
+  }, [content?.transcript]);
 
   useEffect(() => {
     if (toastVisible && fetcher.data?.success) {
-      toast.success("File saved successfully!");
+      toast.success("Rating submitted successfully!");
       setToastVisible(false);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   }, [fetcher.data, toastVisible]);
+
   const handleReset = () => {
     setRating(null);
-    setTranscription("");
   };
 
   const handleSubmit = async () => {
+    if (!rating) {
+      toast.error("Please provide a rating before submitting");
+      return;
+    }
+
+    if (!content) {
+      toast.error("No content available to rate");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("rating", rating?.toString() || "");
-    formData.append("transcription", transcription);
+    formData.append("rating", rating.toString());
+    formData.append("contentId", content.id.toString());
 
-    console.log("Form Data:", formData);
-    await fetcher.submit(formData, { method: "post", action: `/saveFile?session=${user.email}` });
-
-    setRating(null);
-    setTranscription("");
+    await fetcher.submit(formData, { 
+      method: "post", 
+      action: `/saveFile?session=${user.email}` 
+    });
+    
     setToastVisible(true);
   };
 
@@ -103,14 +135,9 @@ export default function Index() {
       </div>
     );
   }
-  
-  if (!user) {
-    return <div>Loading user data...</div>;
-  }
 
   return (
     <div className="p-6 flex">
-      {/* Sidebar and Toggle Button for Annotator Role */}
       {user.role === "ANNOTATOR" && (
         <>
           <button
@@ -129,45 +156,34 @@ export default function Index() {
           Welcome, {user.username}!
         </h1>
 
-        {user.role === "ANNOTATOR" && (
+        {user.role === "ANNOTATOR" && content && (
           <div className="flex flex-col items-center p-6 space-y-8 max-w-xl mx-auto">
-            {/* ImageBox component */}
-            <ImageBox imageUrl={imageUrl || ""} />
+            <ImageBox imageUrl={content.imageUrl} />
 
-            {/* TranscriptTextArea component */}
             <div className="w-full">
               <TranscriptTextArea
                 value={transcription}
                 onChange={(value: string) => setTranscription(value)}
                 placeholder="Enter transcription here..."
+                disabled={true}
               />
             </div>
 
-            {/* Rating Component */}
             <div className="w-full mt-4 flex justify-center">
               <Rating value={rating} onChange={(newRating) => setRating(newRating)} />
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-center mt-6 space-x-4">
               <Buttons label="Reset" onClick={handleReset} />
               <Buttons label="Submit" onClick={handleSubmit} />
             </div>
 
-            {/* Status messages */}
             {fetcher.state === "submitting" && (
               <p className="text-blue-500">Submitting...</p>
             )}
             {fetcher.data?.error && (
               <p className="text-red-500">{fetcher.data.error}</p>
             )}
-          </div>
-        )}
-
-        {/* User Role Content */}
-        {user.role === "USER" && (
-          <div className="text-red-500">
-            You are yet to assign a role. Please contact the admin.
           </div>
         )}
       </div>

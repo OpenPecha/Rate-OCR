@@ -1,17 +1,14 @@
-import { redirect, type ActionFunction } from "@remix-run/node";
+import { type ActionFunction } from "@remix-run/node";
 import { db } from "~/services/db.server";
 
 export const action: ActionFunction = async ({ request }) => {
   try {
     const formData = await request.formData();
     const rating = formData.get("rating");
-    const transcription = formData.get("transcription");
+    const contentId = formData.get("contentId");
 
     const url = new URL(request.url);
     const session = url.searchParams.get("session");
-
-    console.log("Received Form Data:", { rating, transcription });
-    console.log("Received Session in saveFile.tsx:", session);
 
     if (!session) {
       return new Response(
@@ -31,19 +28,21 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    if (!rating || !transcription) {
+    if (!rating || !contentId) {
       return new Response(
-        JSON.stringify({ error: "Rating and transcription are required" }),
+        JSON.stringify({ error: "Rating and content ID are required" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    await db.rate.create({
+    await db.rate.update({
+      where: {
+        id: contentId.toString(),
+      },
       data: {
         rating: parseInt(rating.toString(), 10),
-        transcript: transcription.toString(),
         status: "PENDING",
-        modified_by: { connect: { id: user.id } },
+        modified_by_id: user.id,
       },
     });
 
@@ -51,8 +50,6 @@ export const action: ActionFunction = async ({ request }) => {
       JSON.stringify({ success: true }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
-
-    // return redirect(`/?session=${user.email}`);
   } catch (error) {
     console.error("Error saving data:", error);
     return new Response(
@@ -61,4 +58,3 @@ export const action: ActionFunction = async ({ request }) => {
     );
   }
 };
-

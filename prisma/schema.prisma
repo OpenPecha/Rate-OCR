@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,26 +8,27 @@ datasource db {
 }
 
 model Rate {
-    id          String       @id @default( uuid())
-    imageUrl    String?
-    transcript  String?
-    rating      Int
-    status      Status       @default(PENDING)
-    modified_by User?        @relation("User_modified", fields: [modified_by_id], references: [id])
-    modified_by_id String?
-    reviewed_by User?        @relation("User_reviewed", fields: [reviewed_by_id], references: [id])
-    reviewed_by_id String?
-    createdAt   DateTime     @default(now())
-    updatedAt   DateTime     @updatedAt
+  id             String    @id @default(uuid())
+  imageUrl       String
+  transcript     String
+  rating         Int?
+  fileName       String?  @unique
+  status         Status   @default(PENDING)
+  modified_by_id String?
+  reviewed_by_id String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  modified_by    User?    @relation("User_modified", fields: [modified_by_id], references: [id])
+  reviewed_by    User?    @relation("User_reviewed", fields: [reviewed_by_id], references: [id])
 }
 
 model User {
-  id          String        @id @default( uuid())
-  role        Role          @default(USER)
-  username    String        @unique
-  email       String        @unique
-  modified    Rate[]        @relation("User_modified")
-  reviewed    Rate[]        @relation("User_reviewed")
+  id       String @id @default(uuid())
+  role     Role   @default(USER)
+  username String @unique
+  email    String @unique
+  modified Rate[] @relation("User_modified")
+  reviewed Rate[] @relation("User_reviewed")
 }
 
 enum Role {

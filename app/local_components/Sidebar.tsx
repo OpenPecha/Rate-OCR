@@ -19,6 +19,7 @@ interface LoaderData {
 interface SidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  role : string;
 }
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
