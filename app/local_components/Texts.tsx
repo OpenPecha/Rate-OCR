@@ -102,8 +102,8 @@ const Texts: React.FC = () => {
   }, [fetcher.data]);
 
   return (
-    <div className="mb-2 mt-4 flex flex-col gap-4 items-center">
-    <div className="flex gap-2 items-center">
+    <div className="mb-2 mt-4 flex flex-col gap-4 items-center px-4">
+    <div className="flex flex-col sm:flex-row gap-4 sm:gap-2 items-center w-full sm:justify-center">
       <Label htmlFor="text_file" className="text-sm font-medium text-gray-700">
         Text
       </Label>
@@ -112,20 +112,20 @@ const Texts: React.FC = () => {
         type="file"
         accept=".json,.csv"
         onChange={handleFileChange}
-        className="file-input file-input-bordered w-full max-w-xs"
+        className="file-input file-input-bordered w-full sm:max-w-xs"
       />
       <Button
         type="button"
         onClick={handleUpload}
         disabled={!file || isLoading}
-        className="btn-sm rounded-md min-h-0 bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400"
+        className="w-full sm:w-auto btn-sm rounded-md min-h-0 bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400"
       >
         {isLoading ? <div>uploading...</div> : <>upload</>}
       </Button>
     </div>
   
     {file && (
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 text-center">
         Selected file: {file.name}
       </p>
     )}

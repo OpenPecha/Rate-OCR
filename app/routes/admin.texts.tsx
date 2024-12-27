@@ -2,19 +2,7 @@ import { ActionFunction, LoaderFunction, redirect } from "@remix-run/node";
 import { uploadData } from "~/model/dataUpload.server";
 import { db } from "~/services/db.server";
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const url = new URL(request.url);
-  const sessionEmail = url.searchParams.get("session");
-
-  if (!sessionEmail) {
-    return redirect("/");
-  }
-
-  const user = await db.user.findUnique({ where: { email: sessionEmail } });
-
-  if (!user || user.role !== "ADMIN") {
-    return redirect("/");
-  }
+export const loader: LoaderFunction = async () => {
   return new Response(
     JSON.stringify({ success: true }),
     { 
@@ -23,20 +11,8 @@ export const loader: LoaderFunction = async ({ request }) => {
     }
   );
 };
-
 export const action: ActionFunction = async ({ request }) => {
-  const url = new URL(request.url);
-  const sessionEmail = url.searchParams.get("session");
 
-  if (!sessionEmail) {
-    return redirect("/");
-  }
-
-  const user = await db.user.findUnique({ where: { email: sessionEmail } });
-
-  if (!user || user.role !== "ADMIN") {
-    return redirect("/");
-  }
   const formData = await request.formData();
   const data = formData.get("data");
   const name = formData.get("name");

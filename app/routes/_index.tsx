@@ -53,7 +53,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   if (!pendingContent) {
     return {
       user,
-      message: "No more content to annotate.",
+      message: "No data available. Please reach out to admin",
     };
   }
 
@@ -137,13 +137,13 @@ export default function Index() {
   }
 
   return (
-    <div className="p-6 flex">
+    <div className="p-4 md:p-6 flex flex-col md:flex-row">
       {user.role === "ANNOTATOR" && (
         <>
           <button
             onClick={toggleSidebar}
             title="Toggle Sidebar"
-            className="absolute top-4 left-4 bg-blue-500 text-white p-3 rounded-full">
+            className="fixed top-4 left-4 bg-blue-500 text-white p-3 rounded-full z-50">
             <FaBars className="text-lg" />
           </button>
 
@@ -151,13 +151,14 @@ export default function Index() {
         </>
       )}
 
-      <div className="flex-1 mt-12">
-        <h1 className="text-2xl font-bold text-green-500">
+      <div className="flex-1 mt-12 md:mt-8">
+        <h1 className="text-xl md:text-2xl font-bold text-green-500">
           Welcome, {user.username}!
         </h1>
+        
 
         {user.role === "ANNOTATOR" && content && (
-          <div className="flex flex-col items-center p-6 space-y-8 max-w-xl mx-auto">
+          <div className="flex flex-col items-center p-4 space-y-6 max-w-md md:max-w-xl mx-auto">
             <ImageBox imageUrl={content.imageUrl} />
 
             <div className="w-full">
@@ -173,7 +174,7 @@ export default function Index() {
               <Rating value={rating} onChange={(newRating) => setRating(newRating)} />
             </div>
 
-            <div className="flex justify-center mt-6 space-x-4">
+            <div className="flex flex-col sm:flex-row justify-center mt-6 space-y-2 sm:space-y-0 sm:space-x-4">
               <Buttons label="Reset" onClick={handleReset} />
               <Buttons label="Submit" onClick={handleSubmit} />
             </div>

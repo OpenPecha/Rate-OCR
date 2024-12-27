@@ -134,11 +134,11 @@ export default function Reviewer() {
   }
   
   return (
-    <div className="flex">
+    <div className="flex flex-col md:flex-row">
       <button
         onClick={toggleSidebar}
         title="Toggle Sidebar"
-        className="absolute top-4 left-4 bg-blue-500 text-white p-3 rounded-full">
+        className="fixed top-4 left-4 bg-blue-500 text-white p-3 rounded-full z-50">
         <FaBars className="text-lg" />
       </button>
 
@@ -148,22 +148,22 @@ export default function Reviewer() {
         setSidebarOpen={setSidebarOpen} 
       />
 
-      <div className="flex-1 p-6">
-        <div className="flex flex-col mt-6">
-          <h1 className="text-2xl font-bold text-green-500 mt-6">
+      <div className="flex-1 p-4 md:p-6">
+        <div className="flex flex-col mt-12 md:mt-8">
+          <h1 className="text-xl md:text-2xl font-bold text-green-500">
             Reviewer: {user.username}
           </h1>
         </div>
 
         {message ? (
-          <div className="flex flex-col items-center justify-center mt-20">
-            <div className="bg-blue-50 p-8 rounded-lg shadow-md">
-              <h2 className="text-xl text-blue-800 font-semibold mb-2">Status Update</h2>
-              <p className="text-gray-600">{message}</p>
+          <div className="flex flex-col items-center justify-center mt-16">
+            <div className="bg-blue-50 p-6 sm:p-8 rounded-lg shadow-md">
+              <h2 className="text-lg sm:text-xl text-blue-800 font-semibold mb-2">Status Update</h2>
+              <p className="text-sm sm:text-base text-gray-600">{message}</p>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center p-6 space-y-8 max-w-xl mx-auto">
+          <div className="flex flex-col items-center p-4 space-y-6 max-w-md md:max-w-xl mx-auto">
             <ImageBox imageUrl={rate?.imageUrl || ""} />
             <TranscriptTextArea 
               value={rate?.transcript || ""} 
@@ -176,7 +176,7 @@ export default function Reviewer() {
               disabled={true} 
             />
 
-            <div className="flex justify-center mt-6 space-x-4">
+            <div className="flex flex-col sm:flex-row justify-center mt-6 space-y-2 sm:space-y-0 sm:space-x-4">
               <Buttons label="Approve" onClick={() => handleAction("APPROVED")} />
               <Buttons label="Reject" onClick={() => handleAction("REJECTED")} />
             </div>

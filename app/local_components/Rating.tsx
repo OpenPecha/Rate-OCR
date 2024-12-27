@@ -13,12 +13,13 @@ export default function Rating({ value, onChange, disabled = false }: RatingProp
     }
   };
   return (
-    <div className="flex items-center space-x-2">
-      <span className="text-blue-500">Rating</span>
+    <div className="flex flex-col items-center space-y-2 sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
+      <span className="text-blue-500 text-sm sm:text-base text-center sm:text-left">Rating</span>
+      <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
         <button
           key={rating}
-          className={`w-8 h-8 border rounded ${
+          className={`w-8 h-8 text-sm sm:text-base sm:w-10 sm:h-10 border rounded ${
             value === rating ? "bg-blue-500 text-white" : "bg-white"
           }`}
           onClick={() => handleClick(rating)}
@@ -27,6 +28,7 @@ export default function Rating({ value, onChange, disabled = false }: RatingProp
           {rating}
         </button>
       ))}
+    </div>
     </div>
   );
 }
