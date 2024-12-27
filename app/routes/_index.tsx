@@ -66,10 +66,10 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function Index() {
   const { user, content, message } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<{ error?: string; success?: boolean }>();
+  const fetcher = useFetcher<{ error?: string; success?: boolean; nextContent?: typeof content }>();
   const [rating, setRating] = useState<number | null>(null);
   const [transcription, setTranscription] = useState(content?.transcript || "");
-  const [toastVisible, setToastVisible] = useState(false);
+  const [currentContent, setCurrentContent] = useState(content);
   const [isHydrated, setIsHydrated] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -78,20 +78,27 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    if (content?.transcript) {
+    if (content) {
+      setCurrentContent(content);
       setTranscription(content.transcript);
     }
-  }, [content?.transcript]);
+  }, [content]);
 
   useEffect(() => {
-    if (toastVisible && fetcher.data?.success) {
+    if (fetcher.data?.success) {
       toast.success("Rating submitted successfully!");
-      setToastVisible(false);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      
+      setRating(null);
+      
+      if (fetcher.data.nextContent) {
+        setCurrentContent(fetcher.data.nextContent);
+        setTranscription(fetcher.data.nextContent.transcript || "");
+      } else {
+        setCurrentContent(null);
+        setTranscription("");
+      }
     }
-  }, [fetcher.data, toastVisible]);
+  }, [fetcher.data]);
 
   const handleReset = () => {
     setRating(null);
@@ -103,21 +110,19 @@ export default function Index() {
       return;
     }
 
-    if (!content) {
+    if (!currentContent) {
       toast.error("No content available to rate");
       return;
     }
 
     const formData = new FormData();
     formData.append("rating", rating.toString());
-    formData.append("contentId", content.id.toString());
+    formData.append("contentId", currentContent.id.toString());
 
     await fetcher.submit(formData, { 
       method: "post", 
       action: `/saveFile?session=${user.email}` 
     });
-    
-    setToastVisible(true);
   };
 
   const toggleSidebar = () => {
@@ -160,9 +165,9 @@ export default function Index() {
         </h1>
         
 
-        {user.role === "ANNOTATOR" && content && (
+        {user.role === "ANNOTATOR" && currentContent && (
           <div className="flex flex-col items-center p-4 space-y-6 max-w-md md:max-w-xl mx-auto">
-            <ImageBox imageUrl={content.imageUrl} />
+            <ImageBox imageUrl={currentContent.imageUrl} />
 
             <div className="w-full">
               <TranscriptTextArea

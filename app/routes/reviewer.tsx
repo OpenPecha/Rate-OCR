@@ -80,8 +80,21 @@ export const action: ActionFunction = async ({ request }) => {
       },
     });
 
+    const nextRate = await db.rate.findFirst({
+      where: { 
+        status: "PENDING",
+        rating: { not: null } 
+      },
+      orderBy: {
+        createdAt: 'asc'
+      },
+    });
+
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        nextRate: nextRate || null
+      }),
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
@@ -94,41 +107,61 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function Reviewer() {
-  const { user, rate, message, error } = useLoaderData<LoaderData>();
-  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const { user, rate: initialRate, message, error } = useLoaderData<LoaderData>();
+  const fetcher = useFetcher<{ success?: boolean; error?: string; nextRate?: typeof initialRate }>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [toastVisible, setToastVisible] = useState(false);
+  const [currentRate, setCurrentRate] = useState(initialRate);
   const [currentAction, setCurrentAction] = useState<"APPROVED" | "REJECTED" | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (toastVisible && fetcher.data?.success) {
-      toast.success(`Rating ${currentAction?.toLowerCase()}!`);
-      setToastVisible(false);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+    if (initialRate && !currentRate) {
+      setCurrentRate(initialRate);
     }
-  }, [fetcher.data, toastVisible, currentAction]);
+  }, [initialRate]);
+
+  useEffect(() => {
+    if (fetcher.data?.success && currentAction) {
+      setIsSubmitting(false);
+      toast.success(`Rating ${currentAction.toLowerCase()}`);
+      
+      if (fetcher.data.nextRate) {
+        setCurrentRate(fetcher.data.nextRate);
+      } else {
+        setCurrentRate(null);
+      }
+      setCurrentAction(null);
+    }
+    
+    if (fetcher.data?.error) {
+      setIsSubmitting(false);
+      setCurrentAction(null);
+    }
+  }, [fetcher.data, currentAction]);
 
   const handleAction = (status: "APPROVED" | "REJECTED") => {
-    if (!rate) {
+    if (!currentRate) {
       toast.error("No rating available to process");
       return;
     }
+    if (isSubmitting) {
+      return; 
+    }
+
+    setIsSubmitting(true);
     setCurrentAction(status);
+    
     const formData = new FormData();
     formData.append("status", status);
-    formData.append("rateId", rate.id);
+    formData.append("rateId", currentRate.id);
     formData.append("reviewedById", user.id);
 
     fetcher.submit(formData, { method: "post" });
-    setToastVisible(true);
   };
-
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
+  
   if (error) {
     return <div className="text-red-500">{error}</div>;
   }
@@ -155,7 +188,7 @@ export default function Reviewer() {
           </h1>
         </div>
 
-        {message ? (
+        {message || !currentRate ? (
           <div className="flex flex-col items-center justify-center mt-16">
             <div className="bg-blue-50 p-6 sm:p-8 rounded-lg shadow-md">
               <h2 className="text-lg sm:text-xl text-blue-800 font-semibold mb-2">Status Update</h2>
@@ -164,24 +197,32 @@ export default function Reviewer() {
           </div>
         ) : (
           <div className="flex flex-col items-center p-4 space-y-6 max-w-md md:max-w-xl mx-auto">
-            <ImageBox imageUrl={rate?.imageUrl || ""} />
+            <ImageBox imageUrl={currentRate.imageUrl || ""} />
             <TranscriptTextArea 
-              value={rate?.transcript || ""} 
+              value={currentRate.transcript || ""} 
               onChange={() => {}} 
               disabled={true} 
             />
             <Rating 
-              value={rate?.rating || 0} 
+              value={currentRate.rating || 0} 
               onChange={() => {}} 
               disabled={true} 
             />
 
             <div className="flex flex-col sm:flex-row justify-center mt-6 space-y-2 sm:space-y-0 sm:space-x-4">
-              <Buttons label="Approve" onClick={() => handleAction("APPROVED")} />
-              <Buttons label="Reject" onClick={() => handleAction("REJECTED")} />
+              <Buttons 
+              label="Approve" 
+              onClick={() => handleAction("APPROVED")}
+              disabled={isSubmitting} 
+              />
+              <Buttons 
+              label="Reject" 
+              onClick={() => handleAction("REJECTED")}
+              disabled={isSubmitting} 
+              />
             </div>
 
-            {fetcher.state === "submitting" && (
+            {isSubmitting && (
               <p className="text-blue-500">Submitting review...</p>
             )}
             {fetcher.data?.error && (
@@ -190,7 +231,6 @@ export default function Reviewer() {
           </div>
         )}
       </div>
-
       <Toaster />
     </div>
   );

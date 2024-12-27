@@ -45,9 +45,21 @@ export const action: ActionFunction = async ({ request }) => {
         modified_by_id: user.id,
       },
     });
-
+    const nextContent = await db.rate.findFirst({
+      where: {
+        rating: null,
+        status: "PENDING",
+      },
+      orderBy: {
+        createdAt: 'asc'
+      },
+    });
+    
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        nextContent: nextContent || null
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
