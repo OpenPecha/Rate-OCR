@@ -116,14 +116,7 @@ export default function Reviewer() {
       fetcher.submit(formData, { 
         method: "post"
       });
-      
-      const result = fetcher.data as { success?: boolean; error?: string };
-      
-      if (result?.success) {
-        toast.success(`Rating ${status.toLowerCase()}`);
-      } else if (result?.error) {
-        toast.error(result.error);
-      }
+      toast.success(`Rating ${status.toLowerCase()}`);
     } catch (error) {
       toast.error("An error occurred");
     } finally {
