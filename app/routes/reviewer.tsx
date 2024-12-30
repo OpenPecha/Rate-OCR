@@ -8,13 +8,12 @@ import { LoaderFunction, ActionFunction } from "@remix-run/node";
 import { db } from "~/services/db.server";
 import Sidebar from "~/local_components/Sidebar";
 import { FaBars } from "react-icons/fa";
-import { useState, useEffect } from "react";  
+import { useState } from "react";
 
 type LoaderData = {
   user: { id: string; email: string; username: string; role: string };
-  rate: { id: string; imageUrl: string; transcript: string; rating: number; status: string };
+  rate: { id: string; imageUrl: string; transcript: string; rating: number; status: string } | null;
   message?: string;
-  error?: string;
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -80,21 +79,8 @@ export const action: ActionFunction = async ({ request }) => {
       },
     });
 
-    const nextRate = await db.rate.findFirst({
-      where: { 
-        status: "PENDING",
-        rating: { not: null } 
-      },
-      orderBy: {
-        createdAt: 'asc'
-      },
-    });
-
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        nextRate: nextRate || null
-      }),
+      JSON.stringify({ success: true }),
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
@@ -107,69 +93,48 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function Reviewer() {
-  const { user, rate: initialRate, message, error } = useLoaderData<LoaderData>();
-  const fetcher = useFetcher<{ success?: boolean; error?: string; nextRate?: typeof initialRate }>();
+  const { user, rate, message } = useLoaderData<LoaderData>();
+  const fetcher = useFetcher();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentRate, setCurrentRate] = useState(initialRate);
-  const [currentAction, setCurrentAction] = useState<"APPROVED" | "REJECTED" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (initialRate && !currentRate) {
-      setCurrentRate(initialRate);
-    }
-  }, [initialRate]);
-
-  useEffect(() => {
-    if (fetcher.data?.success && currentAction) {
-      setIsSubmitting(false);
-      toast.success(`Rating ${currentAction.toLowerCase()}`);
-      
-      if (fetcher.data.nextRate) {
-        setCurrentRate(fetcher.data.nextRate);
-      } else {
-        setCurrentRate(null);
-      }
-      setCurrentAction(null);
-    }
-    
-    if (fetcher.data?.error) {
-      setIsSubmitting(false);
-      setCurrentAction(null);
-    }
-  }, [fetcher.data, currentAction]);
-
-  const handleAction = (status: "APPROVED" | "REJECTED") => {
-    if (!currentRate) {
+  const handleAction = async (status: "APPROVED" | "REJECTED") => {
+    if (!rate) {
       toast.error("No rating available to process");
       return;
     }
-    if (isSubmitting) {
-      return; 
-    }
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
-    setCurrentAction(status);
     
     const formData = new FormData();
     formData.append("status", status);
-    formData.append("rateId", currentRate.id);
+    formData.append("rateId", rate.id);
     formData.append("reviewedById", user.id);
 
-    fetcher.submit(formData, { method: "post" });
+    try {
+      fetcher.submit(formData, { 
+        method: "post"
+      });
+      
+      const result = fetcher.data as { success?: boolean; error?: string };
+      
+      if (result?.success) {
+        toast.success(`Rating ${status.toLowerCase()}`);
+      } else if (result?.error) {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-  
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-  
+
   return (
     <div className="flex flex-col md:flex-row">
       <button
-        onClick={toggleSidebar}
+        onClick={() => setSidebarOpen(!sidebarOpen)}
         title="Toggle Sidebar"
         className="fixed top-4 left-4 bg-blue-500 text-white p-3 rounded-full z-50">
         <FaBars className="text-lg" />
@@ -188,7 +153,7 @@ export default function Reviewer() {
           </h1>
         </div>
 
-        {message || !currentRate ? (
+        {message || !rate ? (
           <div className="flex flex-col items-center justify-center mt-16">
             <div className="bg-blue-50 p-6 sm:p-8 rounded-lg shadow-md">
               <h2 className="text-lg sm:text-xl text-blue-800 font-semibold mb-2">Status Update</h2>
@@ -197,36 +162,33 @@ export default function Reviewer() {
           </div>
         ) : (
           <div className="flex flex-col items-center p-4 space-y-6 max-w-md md:max-w-xl mx-auto">
-            <ImageBox imageUrl={currentRate.imageUrl || ""} />
+            <ImageBox imageUrl={rate.imageUrl || ""} />
             <TranscriptTextArea 
-              value={currentRate.transcript || ""} 
+              value={rate.transcript || ""} 
               onChange={() => {}} 
               disabled={true} 
             />
             <Rating 
-              value={currentRate.rating || 0} 
+              value={rate.rating || 0} 
               onChange={() => {}} 
               disabled={true} 
             />
 
             <div className="flex flex-col sm:flex-row justify-center mt-6 space-y-2 sm:space-y-0 sm:space-x-4">
               <Buttons 
-              label="Approve" 
-              onClick={() => handleAction("APPROVED")}
-              disabled={isSubmitting} 
+                label="Approve" 
+                onClick={() => handleAction("APPROVED")}
+                disabled={isSubmitting} 
               />
               <Buttons 
-              label="Reject" 
-              onClick={() => handleAction("REJECTED")}
-              disabled={isSubmitting} 
+                label="Reject" 
+                onClick={() => handleAction("REJECTED")}
+                disabled={isSubmitting} 
               />
             </div>
 
             {isSubmitting && (
               <p className="text-blue-500">Submitting review...</p>
-            )}
-            {fetcher.data?.error && (
-              <p className="text-red-500">{fetcher.data.error}</p>
             )}
           </div>
         )}
