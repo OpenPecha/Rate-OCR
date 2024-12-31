@@ -51,27 +51,39 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
 
   return (
     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <SheetContent side="left" className="w-72 bg-white text-black">
-        <SheetHeader>
-          <SheetTitle className="text-lg font-semibold text-blue-800">History</SheetTitle>
-        </SheetHeader>
-        <div>
-          <ul className="mt-4 space-y-2">
+      <SheetContent side="left" className="w-72 bg-white text-black p-0">
+        <div className="flex flex-col h-full">
+          <SheetHeader className="p-6 border-b">
+            <SheetTitle className="text-xl font-semibold text-blue-800">History</SheetTitle>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             {loading ? (
-              <li>No submissions available</li>
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">Loading...</p>
+              </div>
             ) : submissions.length > 0 ? (
-              submissions.map((submission) => (
-                <li key={submission.id}>
-                  <span className="block font-medium truncate">{submission.transcript}</span>
-                  <span className="block text-xs text-gray-500">
-                    {new Date(submission.createdAt).toLocaleString()}
-                  </span>
-                </li>
-              ))
+              <ul className="space-y-4">
+                {submissions.map((submission) => (
+                  <li 
+                    key={submission.id} 
+                    className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <p className="font-medium text-sm text-gray-800 break-words">
+                      {submission.transcript}
+                    </p>
+                    <time className="block text-xs text-gray-500 mt-1">
+                      {new Date(submission.createdAt).toLocaleString()}
+                    </time>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <li>No submissions available</li>
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">No submissions available</p>
+              </div>
             )}
-          </ul>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
