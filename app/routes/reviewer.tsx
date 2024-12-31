@@ -154,7 +154,7 @@ export default function Reviewer() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center p-4 space-y-6 max-w-md md:max-w-xl mx-auto">
+          <div className="flex flex-col items-center p-4 space-y-4 w-full max-w-2xl lg:max-w-4xl mx-auto">
             <ImageBox imageUrl={rate.imageUrl || ""} />
             <TranscriptTextArea 
               value={rate.transcript || ""} 

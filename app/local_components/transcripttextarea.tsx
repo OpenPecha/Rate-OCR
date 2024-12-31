@@ -14,12 +14,14 @@ export default function TranscriptTextArea({
   disabled = false,
 }: TranscriptTextAreaProps) {
   return (
+    <div className="w-full max-w-4xl lg:max-w-5xl mx-auto">
     <Textarea
-      className="w-full max-w-4xl h-48 rounded-md border border-blue-300 p-2"
+      className="w-full min-h-[200px] md:min-h-[250px] lg:min-h-[300px] rounded-md border border-blue-300 p-2 text-base md:text-lg lg:text-xl"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
     />
+    </div>
   );
 }
